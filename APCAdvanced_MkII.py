@@ -11,74 +11,58 @@ from _Framework.Util import const, recursive_map
 from _Framework.Dependency import inject
 from _Framework.ComboElement import ComboElement, DoublePressElement, MultiElement, DoublePressContext
 from _Framework.ButtonMatrixElement import ButtonMatrixElement 
+from _Framework.SubjectSlot import subject_slot
+from _Framework.Resource import PrioritizedResource
 from _APC.APC import APC
 from Push import Colors
 from Push.PlayheadElement import PlayheadElement
-from Push.NoteSettingsComponent import NoteEditorSettingsComponent
 from Push.GridResolution import GridResolution
+from Push.AutoArmComponent import AutoArmComponent
 
-# Monkeypatch ControlElementUtils
+# Monkeypatch things
 import ControlElementUtils
+import SkinDefault
 sys.modules['_APC.ControlElementUtils'] = ControlElementUtils
+sys.modules['_APC.SkinDefault'] = SkinDefault
+
+
 from APC40_MkII.APC40_MkII import APC40_MkII, NUM_SCENES, NUM_TRACKS
 from SkinDefault import make_rgb_skin, make_default_skin, make_stop_button_skin, make_crossfade_button_skin
 from SessionComponent import SessionComponent
 from StepSeqComponent import StepSeqComponent
 from MatrixMaps import PAD_TRANSLATIONS, FEEDBACK_CHANNELS
+from ButtonSliderElement import ButtonSliderElement
 
 class APCAdvanced_MkII(APC40_MkII):
   """ APC40Mk2 script with step sequencer mode """
   def __init__(self, *a, **k):
-    APC.__init__(self, *a, **k)
-    self._color_skin = make_rgb_skin()
-    self._default_skin = make_default_skin()
-    self._stop_button_skin = make_stop_button_skin()
     self._double_press_context = DoublePressContext()
-    self._crossfade_button_skin = make_crossfade_button_skin()
+    APC40_MkII.__init__(self, *a, **k)
     with self.component_guard():
-      self._create_controls()
-      self._create_bank_toggle()
-      self._create_session()
-      self._create_mixer()
       self._create_sequencer()
       self._create_session_mode()
-      self._create_transport()
-      self._create_device()
-      self._create_view_control()
-      self._create_quantization_selection()
-      self._create_recording()
-      self._create_m4l_interface()
-      self._session.set_mixer(self._mixer)
-    self.set_highlighting_session_component(self._session)
-    self.set_device_component(self._device)
+      self._init_auto_arm()
     self.set_pad_translations(PAD_TRANSLATIONS)
-    self._device_selection_follows_track_selection = True
     self.set_feedback_channels(FEEDBACK_CHANNELS)
-
-  def _create_controls():
+  
+  def _create_controls(self):
+    """ Add some additional stuff baby """
     super(APCAdvanced_MkII, self)._create_controls()
     self._grid_resolution = GridResolution()
+    self._velocity_slider = ButtonSliderElement(tuple(self._scene_launch_buttons_raw[::-1])) 
     double_press_rows = recursive_map(DoublePressElement, self._matrix_rows_raw) 
     self._double_press_matrix = ButtonMatrixElement(name='Double_Press_Matrix', rows=double_press_rows)
     self._double_press_event_matrix = ButtonMatrixElement(name='Double_Press_Event_Matrix', rows=recursive_map(lambda x: x.double_press, double_press_rows))
+    self._playhead = PlayheadElement(self._c_instance.playhead)
 
-  def _create_session(self):
-    """ Not assigning layers here, instead doing it via a ModeSelector """
-    self._session = SessionComponent(NUM_TRACKS, NUM_SCENES, auto_name=True,
-        is_enabled = False, enable_skinning = True)
-    clip_color_table = Colors.CLIP_COLOR_TABLE.copy()
-    clip_color_table[16777215] = 119 # What is this?
-    self._session.set_rgb_mode(clip_color_table, Colors.RGB_COLOR_TABLE)
-    self._session_zoom = SessionZoomingComponent(self._session, name='Session_Overview', 
-        enable_skinning=True, is_enabled=False)
-
-  def _create_mixer(self):
-    """ As with _create_session, separating layer assignment so we have
-    explicit control using ModeSelector """
+    # Make these prioritized resources, which share between Layers() equally
+    # Rather than building a stack
+    self._pan_button._resource_type = PrioritizedResource 
+    self._user_button._resource_type = PrioritizedResource 
+    
 
   def _create_sequencer(self):
-    self._sequencer = StepSeqComponent(grid_resolution = self._grid_resolution,
-        note_editor_settings = self._note_editor_settings())
+    self._sequencer = StepSeqComponent(grid_resolution = self._grid_resolution)
 
   def _create_session_mode(self): 
     """ Switch between Session and StepSequencer modes """
@@ -87,31 +71,29 @@ class APCAdvanced_MkII(APC40_MkII):
     self._session_mode.add_mode('session', self._session_mode_layers())
     self._session_mode.add_mode('session_2', self._session_mode_layers())
     self._session_mode.add_mode('sequencer', (self._sequencer, self._sequencer_layer()))
-    self._session_mode.layer = Layer(session_button = self._pan_button,
-        session_2_button = self._sends_button, sequencer_button = self._user_button)
-    #self._session_mode.selected_mode = "session"
-    self._session_mode.selected_mode = "sequencer"
+    self._session_mode.layer = Layer(
+        session_button = self._pan_button,
+        session_2_button = self._sends_button, 
+        sequencer_button = self._user_button)
+    self._session_mode.selected_mode = "session"
 
   def _session_mode_layers(self):
-    return [ (self._session, self._session_layer()),
-      (self._session_zoom, self._session_zoom_layer())]
+    return [ self._session, self._session_zoom]
 
   def _sequencer_layer(self):
     return Layer(
+        velocity_slider = self._velocity_slider,
         drum_matrix = self._session_matrix.submatrix[:4, 1:5],
         button_matrix = self._double_press_matrix.submatrix[4:8, 1:5],
         select_button = self._user_button,
         delete_button = self._stop_all_button,
-        playhead = self._playhead(),
+        playhead = self._playhead,
         quantization_buttons = self._stop_buttons,
         shift_button = self._shift_button,
         loop_selector_matrix = self._double_press_matrix.submatrix[:8, :1],
         short_loop_selector_matrix = self._double_press_event_matrix.submatrix[:8, :1],
         drum_bank_up_button = self._up_button,
         drum_bank_down_button = self._down_button)
-
-  def _mixer_layer(self):
-    pass
 
   def _session_layer(self):
     def when_bank_on(button):
@@ -140,15 +122,8 @@ class APCAdvanced_MkII(APC40_MkII):
       nav_down_button=self._with_shift(self._down_button), 
       scene_bank_buttons=self._shifted_scene_buttons)
 
-  def _note_editor_settings(self):
-    return NoteEditorSettingsComponent(self._grid_resolution, 
-        Layer(initial_encoders=self._mixer_encoders, 
-          priority=consts.MODAL_DIALOG_PRIORITY), 
-        Layer(encoders=self._mixer_encoders, 
-          priority=consts.MODAL_DIALOG_PRIORITY))
-
-  def _playhead(self):
-    return PlayheadElement(self._c_instance.playhead)
+  def _init_auto_arm(self):
+    self._auto_arm = AutoArmComponent(is_enabled = True)
 
   # EVENT HANDLING FUNCTIONS
   def reset_controlled_track(self):
@@ -160,6 +135,8 @@ class APCAdvanced_MkII(APC40_MkII):
 
   def _on_selected_track_changed(self):
     self.reset_controlled_track()
+    if self._auto_arm.needs_restore_auto_arm:
+      self.schedule_message(1, self._auto_arm.restore_auto_arm)
     super(APCAdvanced_MkII, self)._on_selected_track_changed()
 
   @contextmanager

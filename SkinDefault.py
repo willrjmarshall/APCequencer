@@ -63,7 +63,9 @@ class RgbColors:
       Off = Color(0)
     class NoteEditor:
       class Step:
+        Empty = Rgb.WHITE
         Low = Rgb.SKY.highlight()
+        Medium = Rgb.SKY
         High = Rgb.OCEAN
         Full = Rgb.BLUE
         Muted = Rgb.AMBER.shade(2)

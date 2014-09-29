@@ -5,21 +5,27 @@ from _Framework.SubjectSlot import subject_slot, subject_slot_group
 from Push.StepSeqComponent import StepSeqComponent, DrumGroupFinderComponent
 from Push.SkinDefault import make_default_skin 
 from APCDrumGroupComponent import APCDrumGroupComponent
+from APCMessenger import APCMessenger
 from MatrixMaps import PAD_FEEDBACK_CHANNEL
+from APCNoteEditorComponent import APCNoteEditorComponent
 
-class StepSeqComponent(StepSeqComponent):
+class StepSeqComponent(StepSeqComponent, APCMessenger):
   """ Step sequencer for APC40 MkII """
 
   def __init__(self, *a, **k):
     super(StepSeqComponent, self).__init__(
         clip_creator = ClipCreator(),
-        grid_resolution = None,
         is_enabled = False,
         skin = make_default_skin(),
         *a, **k)
     self._drum_group.__class__ = APCDrumGroupComponent
+    self._note_editor.__class__ = APCNoteEditorComponent
+    self._note_editor._velocity = 100
     self._setup_drum_group_finder()
     self._configure_playhead()
+
+  def set_velocity_slider(self, button_slider):
+    self._note_editor.set_velocity_slider(button_slider)
 
   def _configure_playhead(self):
     self._playhead_component._notes=tuple(chain(*starmap(range, (
