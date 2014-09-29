@@ -2,8 +2,10 @@ from itertools import imap, chain, starmap, izip, ifilter
 from _Framework.Util import first
 from _Framework.ClipCreator import ClipCreator
 from _Framework.SubjectSlot import subject_slot, subject_slot_group
+from _Framework.Layer import Layer 
 from Push.StepSeqComponent import StepSeqComponent, DrumGroupFinderComponent
 from Push.SkinDefault import make_default_skin 
+from NoteSettings import NoteEditorSettingsComponent 
 from APCDrumGroupComponent import APCDrumGroupComponent
 from APCMessenger import APCMessenger
 from MatrixMaps import PAD_FEEDBACK_CHANNEL
@@ -15,6 +17,7 @@ class StepSeqComponent(StepSeqComponent, APCMessenger):
   def __init__(self, *a, **k):
     super(StepSeqComponent, self).__init__(
         clip_creator = ClipCreator(),
+        note_editor_settings = self._note_editor_setting(),
         is_enabled = False,
         skin = make_default_skin(),
         *a, **k)
@@ -22,6 +25,11 @@ class StepSeqComponent(StepSeqComponent, APCMessenger):
     self._note_editor.__class__ = APCNoteEditorComponent
     self._setup_drum_group_finder()
     self._configure_playhead()
+
+  def _note_editor_setting(self):
+    return NoteEditorSettingsComponent(self.control_surface._grid_resolution,
+        Layer(initial_encoders = self.control_surface._mixer_encoders),
+        Layer(encoders = self.control_surface._mixer_encoders))
 
   def set_velocity_slider(self, button_slider):
     self._note_editor.set_velocity_slider(button_slider)
