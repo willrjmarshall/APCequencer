@@ -20,7 +20,6 @@ class StepSeqComponent(StepSeqComponent, APCMessenger):
         *a, **k)
     self._drum_group.__class__ = APCDrumGroupComponent
     self._note_editor.__class__ = APCNoteEditorComponent
-    self._note_editor._velocity = 100
     self._setup_drum_group_finder()
     self._configure_playhead()
 

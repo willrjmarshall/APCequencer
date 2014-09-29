@@ -2,6 +2,7 @@ import sys
 from itertools import chain, imap, ifilter
 from _Framework.SubjectSlot import subject_slot, subject_slot_group
 from Push.NoteEditorComponent import NoteEditorComponent, most_significant_note
+from APCMessenger import APCMessenger
 
 def color_for_note(note):
   velocity = note[3]
@@ -20,9 +21,9 @@ def color_for_note(note):
   else:
     return 'Muted'
 
-class APCNoteEditorComponent(NoteEditorComponent):
+class APCNoteEditorComponent(NoteEditorComponent, APCMessenger):
   """ Customized to have a ButtonSlider for adjustable velocity 
-  And adds some possible colors to note velocity display
+  And add colors to note velocity display
   """
 
   def _add_note_in_step(self, step, modify_existing = True):
@@ -96,13 +97,15 @@ class APCNoteEditorComponent(NoteEditorComponent):
 
 
   def set_velocity_slider(self, button_slider):
+    if not hasattr(self, '_velocity'):
+      self._velocity = 100
     self._velocity_slider = button_slider
     self._on_velocity_changed.subject = button_slider
     self._update_velocity_slider()
 
   def _update_velocity_slider(self):
     if hasattr(self, "_velocity_slider") and self._velocity_slider:
-      self._velocity_slider.send_value(self._velocity)
+      self._velocity_slider.send_value(self._velocity, force_send = True)
   
   @subject_slot("value")
   def _on_velocity_changed(self, value):

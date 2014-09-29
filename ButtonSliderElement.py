@@ -3,10 +3,13 @@ from Push.Colors import Rgb
 
 class ButtonSliderElement(ButtonSliderElement):
   """ Fixes the broken scaling code on the _Framework example
-  caused by odd numbers of buttons """
+  caused by odd numbers of buttons 
+  
+  Also adds force_send
+  """
 
-  def send_value(self, value):
-    if value != self._last_sent_value:
+  def send_value(self, value, force_send = False):
+    if force_send or value != self._last_sent_value:
       num_buttons = len(self._buttons)
       index_to_light = 0
       index_to_light = int(round((num_buttons - 1) * float(value) / 127)) if value > 0 else 0
