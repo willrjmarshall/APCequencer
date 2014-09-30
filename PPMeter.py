@@ -22,6 +22,7 @@ class PPMeter(ControlSurfaceComponent, APCMessenger):
 
   def __init__(self, track, top = MASTER_SCALE_MAX, bottom = MASTER_SCALE_MIN, *a, **k):
     super(PPMeter, self).__init__(*a, **k) 
+    self.target_matrix = None
     self.top = top
     self.bottom = bottom
     self.track = track 
@@ -42,7 +43,6 @@ class PPMeter(ControlSurfaceComponent, APCMessenger):
 
   @subject_slot('output_meter_left')
   def _on_output_meter(self):
-    self.log_message(str(self.mean_peak))
     if self.target_matrix:
       self.set_light()
 

@@ -7,7 +7,7 @@ from _Framework.ModesComponent import ModesComponent, ImmediateBehaviour
 from _Framework.Layer import Layer
 from _Framework.SessionZoomingComponent import SessionZoomingComponent
 from _Framework.Dependency import inject
-from _Framework.Util import const, recursive_map
+from _Framework.Util import const, recursive_map, find_if
 from _Framework.Dependency import inject
 from _Framework.ComboElement import ComboElement, DoublePressElement, MultiElement, DoublePressContext
 from _Framework.ButtonMatrixElement import ButtonMatrixElement 
@@ -21,10 +21,11 @@ from Push.AutoArmComponent import AutoArmComponent
 
 # Monkeypatch things
 import ControlElementUtils
+import SessionComponent
 import SkinDefault
 sys.modules['_APC.ControlElementUtils'] = ControlElementUtils
+sys.modules['_APC.SessionComponent'] = SessionComponent
 sys.modules['_APC.SkinDefault'] = SkinDefault
-
 
 from APC40_MkII.APC40_MkII import APC40_MkII, NUM_SCENES, NUM_TRACKS
 from SkinDefault import make_rgb_skin, make_default_skin, make_stop_button_skin, make_crossfade_button_skin
@@ -33,6 +34,8 @@ from StepSeqComponent import StepSeqComponent
 from MatrixMaps import PAD_TRANSLATIONS, FEEDBACK_CHANNELS
 from ButtonSliderElement import ButtonSliderElement
 from PPMeter import PPMeter
+from RepeatComponent import RepeatComponent
+from SelectPlayingClipComponent import SelectPlayingClipComponent
 
 class APCAdvanced_MkII(APC40_MkII):
   """ APC40Mk2 script with step sequencer mode """
@@ -41,9 +44,11 @@ class APCAdvanced_MkII(APC40_MkII):
     APC40_MkII.__init__(self, *a, **k)
     with self.component_guard():
       self._create_sequencer()
+      self._create_repeats()
+      #self._init_auto_arm()
+      self._init_select_playing_clip()
       self._create_ppm()
       self._create_session_mode()
-      self._init_auto_arm()
     self.set_pad_translations(PAD_TRANSLATIONS)
     self.set_feedback_channels(FEEDBACK_CHANNELS)
   
@@ -56,13 +61,17 @@ class APCAdvanced_MkII(APC40_MkII):
     self._double_press_matrix = ButtonMatrixElement(name='Double_Press_Matrix', rows=double_press_rows)
     self._double_press_event_matrix = ButtonMatrixElement(name='Double_Press_Event_Matrix', rows=recursive_map(lambda x: x.double_press, double_press_rows))
     self._playhead = PlayheadElement(self._c_instance.playhead)
-
     # Make these prioritized resources, which share between Layers() equally
     # Rather than building a stack
     self._pan_button._resource_type = PrioritizedResource 
     self._user_button._resource_type = PrioritizedResource 
     for button in self._scene_launch_buttons_raw:
       button._resource_type = PrioritizedResource
+
+  def _create_repeats(self):
+    self._repeats = RepeatComponent(is_enabled = False, layer = Layer(
+      parameter_buttons = self._scene_launch_buttons))
+    self._repeats.set_device(find_if(lambda d: d.name == 'Repeats', self.song().master_track.devices)) 
 
   def _create_ppm(self):
     self._ppm = PPMeter(self.song().master_track)
@@ -96,7 +105,7 @@ class APCAdvanced_MkII(APC40_MkII):
     self._session_mode.default_behaviour = ImmediateBehaviour()
     self._session_mode.add_mode('session', self._session_mode_layers())
     self._session_mode.add_mode('session_2', self._session_mode_layers())
-    self._session_mode.add_mode('sequencer', (self._sequencer, self._sequencer_layer()))
+    self._session_mode.add_mode('sequencer', self._sequencer_mode_layers())
     self._session_mode.layer = Layer(
         session_button = self._pan_button,
         session_2_button = self._sends_button, 
@@ -104,7 +113,12 @@ class APCAdvanced_MkII(APC40_MkII):
     self._session_mode.selected_mode = "session"
 
   def _session_mode_layers(self):
-    return [ self._session, self._session_zoom, (self._ppm, self._ppm_layer)]
+    return [ self._session, self._session_zoom, (self._ppm, self._ppm_layer), self._select_playing_clip]
+
+  def _sequencer_mode_layers(self):
+    return [
+      self._select_playing_clip,
+      (self._sequencer, self._sequencer_layer())]
 
   def _sequencer_layer(self):
     return Layer(
@@ -123,6 +137,11 @@ class APCAdvanced_MkII(APC40_MkII):
 
   def _init_auto_arm(self):
     self._auto_arm = AutoArmComponent(is_enabled = True)
+
+  def _init_select_playing_clip(self):
+    self._select_playing_clip = SelectPlayingClipComponent(name='Select_Playing_Clip', 
+        playing_clip_above_layer=Layer(action_button=self._up_button), 
+        playing_clip_below_layer=Layer(action_button=self._down_button))
 
   # EVENT HANDLING FUNCTIONS
   def reset_controlled_track(self):

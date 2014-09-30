@@ -59,6 +59,11 @@ class StepSeqComponent(StepSeqComponent, APCMessenger):
     self.set_drum_group_device(self._drum_group_finder.drum_group)
     self.update()
 
+  def set_delete_button(self, button):
+    if button:
+      button.set_channel(PAD_FEEDBACK_CHANNEL)
+    super(StepSeqComponent, self).set_delete_button(button)
+
   def set_button_matrix(self, matrix):
     """ This method, as with most set_* methods, is called every time
     This component is enabled """

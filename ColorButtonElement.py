@@ -2,6 +2,7 @@ from _Framework.ButtonElement import ButtonElement
 from Push.ConfigurableButtonElement import ConfigurableButtonElement
 from _Framework.Skin import Skin, SkinColorMissingError
 from Push.Colors import Rgb
+from MatrixMaps import DEFAULT_CHANNEL
 
 class ColorButtonElement(ConfigurableButtonElement):
   """ Same as Push's but doesn't change channels """
