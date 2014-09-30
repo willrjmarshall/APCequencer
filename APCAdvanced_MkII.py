@@ -32,6 +32,7 @@ from SessionComponent import SessionComponent
 from StepSeqComponent import StepSeqComponent
 from MatrixMaps import PAD_TRANSLATIONS, FEEDBACK_CHANNELS
 from ButtonSliderElement import ButtonSliderElement
+from PPMeter import PPMeter
 
 class APCAdvanced_MkII(APC40_MkII):
   """ APC40Mk2 script with step sequencer mode """
@@ -40,6 +41,7 @@ class APCAdvanced_MkII(APC40_MkII):
     APC40_MkII.__init__(self, *a, **k)
     with self.component_guard():
       self._create_sequencer()
+      self._create_ppm()
       self._create_session_mode()
       self._init_auto_arm()
     self.set_pad_translations(PAD_TRANSLATIONS)
@@ -59,7 +61,31 @@ class APCAdvanced_MkII(APC40_MkII):
     # Rather than building a stack
     self._pan_button._resource_type = PrioritizedResource 
     self._user_button._resource_type = PrioritizedResource 
-    
+    for button in self._scene_launch_buttons_raw:
+      button._resource_type = PrioritizedResource
+
+  def _create_ppm(self):
+    self._ppm = PPMeter(self.song().master_track)
+    self._ppm_layer = Layer(target_matrix = ButtonMatrixElement(rows=[self._scene_launch_buttons_raw[::-1]])) 
+
+  def _create_session(self):
+    """ Overridden to remove scene launches """
+    def when_bank_on(button):
+      return self._bank_toggle.create_toggle_element(on_control=button)
+    def when_bank_off(button):
+      return self._bank_toggle.create_toggle_element(off_control=button)
+    super(APCAdvanced_MkII, self)._create_session()
+    self._session.layer=Layer(track_bank_left_button=when_bank_off(self._left_button), 
+          track_bank_right_button=when_bank_off(self._right_button), 
+          scene_bank_up_button=when_bank_off(self._up_button),
+          scene_bank_down_button=when_bank_off(self._down_button), 
+          page_left_button=when_bank_on(self._left_button), 
+          page_right_button=when_bank_on(self._right_button), 
+          page_up_button=when_bank_on(self._up_button), 
+          page_down_button=when_bank_on(self._down_button), 
+          stop_track_clip_buttons=self._stop_buttons, 
+          stop_all_clips_button=self._stop_all_button, 
+          clip_launch_buttons=self._session_matrix)
 
   def _create_sequencer(self):
     self._sequencer = StepSeqComponent(grid_resolution = self._grid_resolution)
@@ -78,7 +104,7 @@ class APCAdvanced_MkII(APC40_MkII):
     self._session_mode.selected_mode = "session"
 
   def _session_mode_layers(self):
-    return [ self._session, self._session_zoom]
+    return [ self._session, self._session_zoom, (self._ppm, self._ppm_layer)]
 
   def _sequencer_layer(self):
     return Layer(
@@ -94,33 +120,6 @@ class APCAdvanced_MkII(APC40_MkII):
         short_loop_selector_matrix = self._double_press_event_matrix.submatrix[:8, :1],
         drum_bank_up_button = self._up_button,
         drum_bank_down_button = self._down_button)
-
-  def _session_layer(self):
-    def when_bank_on(button):
-      return self._bank_toggle.create_toggle_element(on_control=button)
-    def when_bank_off(button):
-      return self._bank_toggle.create_toggle_element(off_control=button)
-    return Layer(
-      track_bank_left_button = when_bank_off(self._left_button), 
-      track_bank_right_button = when_bank_off(self._right_button), 
-      scene_bank_up_button = when_bank_off(self._up_button), 
-      scene_bank_down_button = when_bank_off(self._down_button), 
-      page_left_button = when_bank_on(self._left_button), 
-      page_right_button = when_bank_on(self._right_button), 
-      page_up_button = when_bank_on(self._up_button), 
-      page_down_button = when_bank_on(self._down_button), 
-      stop_track_clip_buttons = self._stop_buttons,
-      stop_all_clips_button = self._stop_all_button, 
-      scene_launch_buttons = self._scene_launch_buttons, 
-      clip_launch_buttons = self._session_matrix)
-
-  def _session_zoom_layer(self):
-    return Layer(button_matrix=self._shifted_matrix, 
-      nav_left_button=self._with_shift(self._left_button), 
-      nav_right_button=self._with_shift(self._right_button), 
-      nav_up_button=self._with_shift(self._up_button), 
-      nav_down_button=self._with_shift(self._down_button), 
-      scene_bank_buttons=self._shifted_scene_buttons)
 
   def _init_auto_arm(self):
     self._auto_arm = AutoArmComponent(is_enabled = True)

@@ -6,6 +6,7 @@ class NoteEditorSettingsComponent(NoteEditorSettingsComponent, APCMessenger):
   """ Customized to highlight specific encoders for APC """
 
   def set_encoders(self, encoders):
+    """ Set the encoder mode to visible and init to center """ 
     super(NoteEditorSettingsComponent, self).set_encoders(encoders)
     if encoders:
       for i, encoder in enumerate(encoders):
