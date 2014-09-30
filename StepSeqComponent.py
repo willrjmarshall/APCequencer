@@ -26,6 +26,12 @@ class StepSeqComponent(StepSeqComponent, APCMessenger):
     self._setup_drum_group_finder()
     self._configure_playhead()
 
+
+  def _select_track_by_name(self, name):
+    for track in self.song().tracks:
+      if track.name == name:
+        self.song().view.selected_track = track
+
   def _note_editor_setting(self):
     return NoteEditorSettingsComponent(self.control_surface._grid_resolution,
         Layer(initial_encoders = self.control_surface._mixer_encoders),
@@ -70,6 +76,7 @@ class StepSeqComponent(StepSeqComponent, APCMessenger):
     self._note_editor_matrix = matrix
     self._update_note_editor_matrix()
     if matrix:
+      self._select_track_by_name("Drums") # Select the drum track if we can
       for button, _ in ifilter(first, matrix.iterbuttons()):
         button.set_channel(PAD_FEEDBACK_CHANNEL)
 
