@@ -45,7 +45,7 @@ class APCAdvanced_MkII(APC40_MkII):
     with self.component_guard():
       self._create_sequencer()
       self._create_repeats()
-      #self._init_auto_arm()
+      self._init_auto_arm()
       self._init_select_playing_clip()
       self._create_ppm()
       self._create_session_mode()
@@ -113,11 +113,10 @@ class APCAdvanced_MkII(APC40_MkII):
     self._session_mode.selected_mode = "session"
 
   def _session_mode_layers(self):
-    return [ self._session, self._session_zoom, (self._ppm, self._ppm_layer), self._select_playing_clip]
+    return [ self._session, self._session_zoom, (self._ppm, self._ppm_layer)]
 
   def _sequencer_mode_layers(self):
     return [
-      self._select_playing_clip,
       (self._sequencer, self._sequencer_layer())]
 
   def _sequencer_layer(self):
@@ -150,12 +149,6 @@ class APCAdvanced_MkII(APC40_MkII):
   def update(self):
     self.reset_controlled_track()
     super(APCAdvanced_MkII, self).update()
-
-  def _on_selected_track_changed(self):
-    self.reset_controlled_track()
-    if self._auto_arm.needs_restore_auto_arm:
-      self.schedule_message(1, self._auto_arm.restore_auto_arm)
-    super(APCAdvanced_MkII, self)._on_selected_track_changed()
 
   @contextmanager
   def component_guard(self):
