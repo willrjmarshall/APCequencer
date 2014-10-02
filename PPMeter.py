@@ -46,6 +46,10 @@ class PPMeter(ControlSurfaceComponent, APCMessenger):
     if self.target_matrix:
       self.set_light()
 
+  def update(self):
+    if self.target_matrix:
+      self.set_light()
+
   @property
   def led_index(self):
     """ The index of the current peak LED """

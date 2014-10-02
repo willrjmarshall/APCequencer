@@ -82,8 +82,9 @@ class APCAdvanced_MkII(APC40_MkII):
         buttons = self._stepper_buttons())
 
   def _create_repeats(self):
-    self._repeats = RepeatComponent(is_enabled = False, layer = Layer(
-      parameter_buttons = self._scene_launch_buttons))
+    self._repeats = RepeatComponent(is_enabled = False) 
+    self._repeats_layer = Layer(
+      parameter_buttons = self._scene_launch_buttons)
     self._repeats.set_device(find_if(lambda d: d.name == 'Repeats', self.song().master_track.devices)) 
 
   def _create_ppm(self):
@@ -158,6 +159,7 @@ class APCAdvanced_MkII(APC40_MkII):
   def _session_mode_layers(self):
     return [ self._session, self._session_zoom,
         self._stepper,
+        (self._repeats, self._repeats_layer),
         (self._ppm, self._ppm_layer)]
 
   def _sequencer_mode_layers(self):
