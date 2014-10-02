@@ -21,6 +21,7 @@ class StepSeqComponent(StepSeqComponent, APCMessenger):
         is_enabled = False,
         skin = make_default_skin(),
         *a, **k)
+    self._quant_buttons = None 
     self._drum_group.__class__ = APCDrumGroupComponent
     self._note_editor.__class__ = APCNoteEditorComponent
     self._setup_drum_group_finder()
@@ -69,6 +70,19 @@ class StepSeqComponent(StepSeqComponent, APCMessenger):
     if button:
       button.set_channel(PAD_FEEDBACK_CHANNEL)
     super(StepSeqComponent, self).set_delete_button(button)
+
+  def set_quantization_buttons(self, buttons):
+    """ When loaded, move the buttons to empty space on channel 15
+    When unloaded reset them """
+    if self._quant_buttons:
+      self._quant_buttons.reset() # Reset quant buttons when released
+    self._quant_buttons = buttons
+    if buttons:
+      for i, button in enumerate(buttons):
+        if i > 3: # Only change second half's channel
+          button.set_channel(PAD_FEEDBACK_CHANNEL - 1)
+          button.set_identifier(100 + i)
+    self._grid_resolution.set_buttons(buttons)
 
   def set_button_matrix(self, matrix):
     """ This method, as with most set_* methods, is called every time

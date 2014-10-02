@@ -8,3 +8,7 @@ class ButtonElement(ButtonElement):
     """ We don't actually care, but the script does want to set these.
     If the button doesn't support 'em, no change is necessary """
     pass
+
+  def reset(self):
+    self.set_identifier(self._original_identifier)
+    self.set_channel(self._original_channel)

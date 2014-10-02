@@ -2,6 +2,7 @@ from __future__ import with_statement
 import sys
 from functools import partial
 from contextlib import contextmanager
+from itertools import izip
 
 from _Framework.ModesComponent import ModesComponent, ImmediateBehaviour
 from _Framework.Layer import Layer
@@ -36,6 +37,7 @@ from ButtonSliderElement import ButtonSliderElement
 from PPMeter import PPMeter
 from RepeatComponent import RepeatComponent
 from SelectPlayingClipComponent import SelectPlayingClipComponent
+from StepperComponent import StepperComponent
 
 class APCAdvanced_MkII(APC40_MkII):
   """ APC40Mk2 script with step sequencer mode """
@@ -45,6 +47,7 @@ class APCAdvanced_MkII(APC40_MkII):
     with self.component_guard():
       self._create_sequencer()
       self._create_repeats()
+      self._create_stepper()
       self._init_auto_arm()
       self._init_select_playing_clip()
       self._create_ppm()
@@ -68,6 +71,16 @@ class APCAdvanced_MkII(APC40_MkII):
     for button in self._scene_launch_buttons_raw:
       button._resource_type = PrioritizedResource
 
+  def _create_stepper(self):
+    self._stepper = StepperComponent(grid_resolution = self._grid_resolution,
+        is_enabled = False,
+        layer = Layer(playhead = self._playhead, 
+        buttons = self._stepper_buttons()))
+
+  def _stepper_layer(self):
+    return Layer(playhead = self._playhead, 
+        buttons = self._stepper_buttons())
+
   def _create_repeats(self):
     self._repeats = RepeatComponent(is_enabled = False, layer = Layer(
       parameter_buttons = self._scene_launch_buttons))
@@ -78,13 +91,14 @@ class APCAdvanced_MkII(APC40_MkII):
     self._ppm_layer = Layer(target_matrix = ButtonMatrixElement(rows=[self._scene_launch_buttons_raw[::-1]])) 
 
   def _create_session(self):
-    """ Overridden to remove scene launches """
+    """ We use two session objects, one of which never moves """
     def when_bank_on(button):
       return self._bank_toggle.create_toggle_element(on_control=button)
     def when_bank_off(button):
       return self._bank_toggle.create_toggle_element(off_control=button)
-    super(APCAdvanced_MkII, self)._create_session()
-    self._session.layer=Layer(track_bank_left_button=when_bank_off(self._left_button), 
+
+    self._session = SessionComponent(NUM_TRACKS - 4, NUM_SCENES, auto_name=True, is_enabled=False, enable_skinning=True, 
+          layer = Layer(track_bank_left_button=when_bank_off(self._left_button), 
           track_bank_right_button=when_bank_off(self._right_button), 
           scene_bank_up_button=when_bank_off(self._up_button),
           scene_bank_down_button=when_bank_off(self._down_button), 
@@ -92,9 +106,38 @@ class APCAdvanced_MkII(APC40_MkII):
           page_right_button=when_bank_on(self._right_button), 
           page_up_button=when_bank_on(self._up_button), 
           page_down_button=when_bank_on(self._down_button), 
-          stop_track_clip_buttons=self._stop_buttons, 
+          stop_track_clip_buttons=self._stop_buttons.submatrix[:4, :1], 
           stop_all_clips_button=self._stop_all_button, 
-          clip_launch_buttons=self._session_matrix)
+          clip_launch_buttons=self._session_matrix.submatrix[:4, :5]))
+    clip_color_table = Colors.CLIP_COLOR_TABLE.copy()
+    clip_color_table[16777215] = 119
+    self._session.set_rgb_mode(clip_color_table, Colors.RGB_COLOR_TABLE)
+    self._session_zoom = SessionZoomingComponent(self._session, name='Session_Overview', enable_skinning=True, is_enabled=False, layer=Layer(button_matrix=self._shifted_matrix, nav_left_button=self._with_shift(self._left_button), nav_right_button=self._with_shift(self._right_button), nav_up_button=self._with_shift(self._up_button), nav_down_button=self._with_shift(self._down_button), scene_bank_buttons=self._shifted_scene_buttons))
+
+    self._dummy_clip_session = SessionComponent(NUM_TRACKS - 4, 
+        NUM_SCENES, auto_name=True, is_enabled=False, enable_skinning=True, 
+          layer = Layer(
+            clip_launch_buttons=self._session_matrix.submatrix[4:8, :5]))
+    self._dummy_clip_session.set_rgb_mode(clip_color_table, Colors.RGB_COLOR_TABLE)
+    self._dummy_clip_session.set_offsets(4, 2)
+    self._session.set_offsets(0, 2)
+
+    
+
+  def _create_mixer(self):
+    """ Disabling the second group of four:
+    Arms, Mutes, Crossfaders, Solos, Selects """
+    super(APCAdvanced_MkII, self)._create_mixer()
+    self._mixer.layer = Layer(
+          volume_controls=self._volume_controls,
+          arm_buttons=self._arm_buttons.submatrix[:4, :1], 
+          solo_buttons=self._solo_buttons.submatrix[:4, :1], 
+          mute_buttons=self._mute_buttons.submatrix[:4, :1], 
+          track_select_buttons=self._select_buttons.submatrix[:4, :1], 
+          crossfade_buttons=self._crossfade_buttons.submatrix[:4, :1],
+          shift_button=self._shift_button, 
+          prehear_volume_control=self._prehear_control, 
+          crossfader_control=self._crossfader_control)
 
   def _create_sequencer(self):
     self._sequencer = StepSeqComponent(grid_resolution = self._grid_resolution)
@@ -113,11 +156,16 @@ class APCAdvanced_MkII(APC40_MkII):
     self._session_mode.selected_mode = "session"
 
   def _session_mode_layers(self):
-    return [ self._session, self._session_zoom, (self._ppm, self._ppm_layer)]
+    return [ self._session, self._session_zoom,
+        self._stepper,
+        (self._ppm, self._ppm_layer)]
 
   def _sequencer_mode_layers(self):
     return [
       (self._sequencer, self._sequencer_layer())]
+
+  def _stepper_buttons(self):
+    return self._select_buttons.submatrix[4:8, :1]
 
   def _sequencer_layer(self):
     return Layer(
