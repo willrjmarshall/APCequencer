@@ -12,8 +12,8 @@ class StepperComponent(PlayheadComponent, APCMessenger):
     self._buttons = buttons
     if buttons:
       for i, button in enumerate(buttons):
-        button.set_channel(PAD_FEEDBACK_CHANNEL)
-        button.set_identifier(50 + i)
+        button.set_identifier(75 + i)
+        button.set_channel(PAD_FEEDBACK_CHANNEL - 2)
         button.turn_off()
     self.update()
 

@@ -77,10 +77,6 @@ class APCAdvanced_MkII(APC40_MkII):
         layer = Layer(playhead = self._playhead, 
         buttons = self._stepper_buttons()))
 
-  def _stepper_layer(self):
-    return Layer(playhead = self._playhead, 
-        buttons = self._stepper_buttons())
-
   def _create_repeats(self):
     self._repeats = RepeatComponent(is_enabled = False) 
     self._repeats_layer = Layer(
@@ -158,7 +154,6 @@ class APCAdvanced_MkII(APC40_MkII):
 
   def _session_mode_layers(self):
     return [ self._session, self._session_zoom,
-        self._stepper,
         (self._repeats, self._repeats_layer),
         (self._ppm, self._ppm_layer)]
 

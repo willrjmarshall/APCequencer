@@ -31,6 +31,8 @@ class PPMeter(ControlSurfaceComponent, APCMessenger):
 
   def set_target_matrix(self, target_matrix):
     self.target_matrix = target_matrix
+    if target_matrix:
+      self.set_light()
 
   def set_light(self):
     for x in range(self.led_count):
@@ -43,10 +45,6 @@ class PPMeter(ControlSurfaceComponent, APCMessenger):
 
   @subject_slot('output_meter_left')
   def _on_output_meter(self):
-    if self.target_matrix:
-      self.set_light()
-
-  def update(self):
     if self.target_matrix:
       self.set_light()
 
