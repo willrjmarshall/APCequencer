@@ -15,6 +15,7 @@ from _Framework.ButtonMatrixElement import ButtonMatrixElement
 from _Framework.SubjectSlot import subject_slot
 from _Framework.Resource import PrioritizedResource
 from _APC.APC import APC
+from _APC.MixerComponent import ChanStripComponent
 from Push import Colors
 from Push.PlayheadElement import PlayheadElement
 from Push.GridResolution import GridResolution
@@ -38,6 +39,7 @@ from PPMeter import PPMeter
 from RepeatComponent import RepeatComponent
 from SelectPlayingClipComponent import SelectPlayingClipComponent
 from StepperComponent import StepperComponent
+from LooperComponent import LooperComponent
 
 class APCAdvanced_MkII(APC40_MkII):
   """ APC40Mk2 script with step sequencer mode """
@@ -51,6 +53,7 @@ class APCAdvanced_MkII(APC40_MkII):
       self._init_auto_arm()
       self._init_select_playing_clip()
       self._create_ppm()
+      self._create_looper()
       self._create_session_mode()
     self.set_pad_translations(PAD_TRANSLATIONS)
     self.set_feedback_channels(FEEDBACK_CHANNELS)
@@ -86,6 +89,19 @@ class APCAdvanced_MkII(APC40_MkII):
   def _create_ppm(self):
     self._ppm = PPMeter(self.song().master_track)
     self._ppm_layer = Layer(target_matrix = ButtonMatrixElement(rows=[self._scene_launch_buttons_raw[::-1]])) 
+
+  def _create_looper(self):
+    mutes = self._mute_buttons._orig_buttons[0]
+    fades = self._crossfade_buttons._orig_buttons[0]
+    self._looper = LooperComponent(is_enabled = False, layer = Layer(
+      toggle_button = mutes[4],
+      start_button = fades[4],
+      halve_button = mutes[5],
+      double_button = fades[5],
+      left_button = mutes[6],
+      right_button = fades[6],
+      nudge_left_button = mutes[7],
+      nudge_right_button = fades[7]))
 
   def _create_session(self):
     """ We use two session objects, one of which never moves """
@@ -135,6 +151,15 @@ class APCAdvanced_MkII(APC40_MkII):
           shift_button=self._shift_button, 
           prehear_volume_control=self._prehear_control, 
           crossfader_control=self._crossfader_control)
+
+    self._drum_chan = None
+    for track in self.song().tracks:
+      if track.name == 'Drums':
+        self._drum_chan = ChanStripComponent()
+        self._drum_chan.set_track(track)
+        self._drum_chan.layer = Layer(select_button = self._master_select_button, volume_control = 
+            self._master_volume_control)
+        
 
   def _create_sequencer(self):
     self._sequencer = StepSeqComponent(grid_resolution = self._grid_resolution)

@@ -8,7 +8,7 @@ from Push.SkinDefault import make_default_skin
 from NoteSettings import NoteEditorSettingsComponent 
 from APCDrumGroupComponent import APCDrumGroupComponent
 from APCMessenger import APCMessenger
-from MatrixMaps import PAD_FEEDBACK_CHANNEL
+from MatrixMaps import PAD_FEEDBACK_CHANNEL, QUANTIZATION_CHANNEL, QUANTIZATION_ROOT
 from APCNoteEditorComponent import APCNoteEditorComponent
 
 class StepSeqComponent(StepSeqComponent, APCMessenger):
@@ -80,8 +80,8 @@ class StepSeqComponent(StepSeqComponent, APCMessenger):
     if buttons:
       for i, button in enumerate(buttons):
         if i > 3: # Only change second half's channel
-          button.set_channel(PAD_FEEDBACK_CHANNEL - 1)
-          button.set_identifier(100 + i)
+          button.set_channel(QUANTIZATION_CHANNEL)
+          button.set_identifier(QUANTIZATION_ROOT + i)
     self._grid_resolution.set_buttons(buttons)
 
   def set_button_matrix(self, matrix):

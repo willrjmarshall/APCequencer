@@ -1,6 +1,6 @@
 from Push.PlayheadComponent import PlayheadComponent
 from APCMessenger import APCMessenger
-from MatrixMaps import PAD_FEEDBACK_CHANNEL
+from MatrixMaps import VISUAL_METRONOME_CHANNEL, VISUAL_METRONOME_ROOT
 
 class StepperComponent(PlayheadComponent, APCMessenger):
   """ For a basic beats stepper. Sets own notes """
@@ -12,8 +12,8 @@ class StepperComponent(PlayheadComponent, APCMessenger):
     self._buttons = buttons
     if buttons:
       for i, button in enumerate(buttons):
-        button.set_identifier(75 + i)
-        button.set_channel(PAD_FEEDBACK_CHANNEL - 2)
+        button.set_identifier(VISUAL_METRONOME_ROOT + i)
+        button.set_channel(VISUAL_METRONOME_CHANNEL)
         button.turn_off()
     self.update()
 
@@ -23,7 +23,8 @@ class StepperComponent(PlayheadComponent, APCMessenger):
       for track in self.song().tracks:
         if track.name == "Stepper":
           # Weird little hack to work around a bug in the C API
-          # If we just return 'track' it doesn't work 
+          # If we just return 'track' it doesn't work, so we get a child
+          # Then return the parent. Go figure?
           return track.clip_slots[0].canonical_parent
     
   def update(self): 

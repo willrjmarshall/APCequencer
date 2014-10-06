@@ -2,6 +2,16 @@ FEEDBACK_CHANNELS = range(5, 15)
 PAD_FEEDBACK_CHANNEL = FEEDBACK_CHANNELS[-1]
 NON_FEEDBACK_CHANNEL = 15
 DEFAULT_CHANNEL = 0
+
+# These are essentially channel and initial note
+# Used for reassigning groups of controls to clear slots
+# Allowing MIDI-mapping to work, while engaging buttons in
+# Some modes
+VISUAL_METRONOME_CHANNEL = FEEDBACK_CHANNELS[-2]
+VISUAL_METRONOME_ROOT = 75 
+QUANTIZATION_CHANNEL = FEEDBACK_CHANNELS[-1]
+QUANTIZATION_ROOT = 100 
+
 PAD_TRANSLATIONS = (
  (0, 0, 24, PAD_FEEDBACK_CHANNEL),
  (1, 0, 25, PAD_FEEDBACK_CHANNEL),
