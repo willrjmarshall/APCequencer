@@ -57,7 +57,6 @@ class StepSeqComponent(StepSeqComponent, APCMessenger):
 
   def on_selected_track_changed(self):
     self.set_drum_group_device(self._drum_group_finder.drum_group)
-    self.update()
 
   def set_button_matrix(self, matrix):
     """ This method, as with most set_* methods, is called every time

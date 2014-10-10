@@ -105,6 +105,13 @@ class APCNoteEditorComponent(NoteEditorComponent, APCMessenger):
       indices = filter(lambda k: k % 4 != 3, indices)
     return [ (self._time_step(first_time + k * step_length), index) for k, index in enumerate(indices) ]
 
+  def on_selected_track_changed(self):
+    if self.song().view.selected_track.has_midi_input:
+      self.set_enabled(True)
+      self.update()
+    else:
+      self.set_enabled(False)
+
   def set_velocity_slider(self, button_slider):
     if not hasattr(self, '_velocity'):
       self._velocity = 100

@@ -33,7 +33,7 @@ from StepSeqComponent import StepSeqComponent
 from MatrixMaps import PAD_TRANSLATIONS, FEEDBACK_CHANNELS
 from ButtonSliderElement import ButtonSliderElement
 
-class APCAdvanced_MkII(APC40_MkII):
+class APSequencer(APC40_MkII):
   """ APC40Mk2 script with step sequencer mode """
   def __init__(self, *a, **k):
     self._double_press_context = DoublePressContext()
@@ -47,7 +47,7 @@ class APCAdvanced_MkII(APC40_MkII):
   
   def _create_controls(self):
     """ Add some additional stuff baby """
-    super(APCAdvanced_MkII, self)._create_controls()
+    super(APSequencer, self)._create_controls()
     self._grid_resolution = GridResolution()
     self._velocity_slider = ButtonSliderElement(tuple(self._scene_launch_buttons_raw[::-1])) 
     double_press_rows = recursive_map(DoublePressElement, self._matrix_rows_raw) 
@@ -131,18 +131,18 @@ class APCAdvanced_MkII(APC40_MkII):
   
   def update(self):
     self.reset_controlled_track()
-    super(APCAdvanced_MkII, self).update()
+    super(APSequencer, self).update()
 
   def _on_selected_track_changed(self):
     self.reset_controlled_track()
     if self._auto_arm.needs_restore_auto_arm:
       self.schedule_message(1, self._auto_arm.restore_auto_arm)
-    super(APCAdvanced_MkII, self)._on_selected_track_changed()
+    super(APSequencer, self)._on_selected_track_changed()
 
   @contextmanager
   def component_guard(self):
     """ Customized to inject additional things """
-    with super(APCAdvanced_MkII, self).component_guard():
+    with super(APSequencer, self).component_guard():
       with self.make_injector().everywhere():
         yield
 
@@ -152,3 +152,4 @@ class APCAdvanced_MkII(APC40_MkII):
       double_press_context = const(self._double_press_context),
       control_surface = const(self),
       log_message = const(self.log_message))
+
