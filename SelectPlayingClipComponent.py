@@ -6,3 +6,4 @@ class SelectPlayingClipComponent(SelectPlayingClipComponent):
   def on_selected_track_changed(self):
     if self.song().is_playing:
       self._go_to_playing_clip()
+      self.application().view.show_view('Detail/Clip')

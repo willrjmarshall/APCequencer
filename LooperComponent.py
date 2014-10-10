@@ -42,11 +42,13 @@ class LooperComponent(ControlSurfaceComponent):
 
   def set_halve_button(self, button):
     self._on_halve.subject = button 
-    button.turn_on()
+    if button:
+      button.turn_on()
 
   def set_double_button(self, button):
     self._on_double.subject = button 
-    button.turn_on()
+    if button:
+      button.turn_on()
 
   def set_left_button(self, button):
     self._on_left.subject = button
@@ -56,11 +58,16 @@ class LooperComponent(ControlSurfaceComponent):
 
   def set_nudge_left_button(self, button):
     self._nudge_left.subject = button
-    button.turn_on()
+    if button:
+      button.turn_on()
 
   def set_nudge_right_button(self, button):
     self._nudge_right.subject = button
-    button.turn_on()
+    if button:
+      button.turn_on()
+
+  def on_selected_track_changed(self):
+    self.update()
 
   def update(self):
     super(LooperComponent, self).update()
