@@ -95,6 +95,15 @@ class APCNoteEditorComponent(NoteEditorComponent, APCMessenger):
     self._step_colors = step_colors
     self._update_editor_matrix_leds()
 
+  def _visible_steps(self):
+    """ Patched to support four-wide """
+    first_time = self.page_length * self._page_index
+    steps_per_page = self._get_step_count()
+    step_length = self._get_step_length()
+    indices = range(steps_per_page)
+    if self._is_triplet_quantization():
+      indices = filter(lambda k: k % 4 != 3, indices)
+    return [ (self._time_step(first_time + k * step_length), index) for k, index in enumerate(indices) ]
 
   def set_velocity_slider(self, button_slider):
     if not hasattr(self, '_velocity'):
