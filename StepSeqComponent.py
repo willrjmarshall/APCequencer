@@ -74,7 +74,7 @@ class StepSeqComponent(StepSeqComponent, APCMessenger):
   def set_quantization_buttons(self, buttons):
     """ When loaded, move the buttons to empty space on channel 15
     When unloaded reset them """
-    if self._quant_buttons:
+    if self._quant_buttons and buttons is None:
       self._quant_buttons.reset() # Reset quant buttons when released
     self._quant_buttons = buttons
     if buttons:
